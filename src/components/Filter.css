@@ -336,23 +336,21 @@
 }
 
 .filter-selection-item.model-child {
-  background-color: #f8f9fa;
-  border-left: 4px solid var(--blue-60);
+  background-color: var(--white);
   border-bottom: 1px solid var(--border-color);
 }
 
 .filter-selection-item.model-child:hover {
-  background-color: #e9ecef;
+  background-color: #f8f9fa;
 }
 
 .filter-selection-item.model-child .filter-selection-content {
   padding-left: 40px; /* Increased left padding for visual hierarchy */
 }
 
-.filter-selection-item.model-child .filter-selection-name.model-name {
+.filter-selection-item.model-child .filter-selection-name {
   color: var(--park-gray-0);
   font-weight: var(--font-weight-regular);
-  font-style: italic;
 }
 
 /* Hide border-bottom for make headers when they have model children */

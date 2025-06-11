@@ -202,6 +202,13 @@ const Filter = ({ onClose, onFilterChange }) => {
     setSearchQuery(e.target.value);
   };
 
+  // Clear search when navigating away from make view
+  useEffect(() => {
+    if (currentView !== 'make') {
+      setSearchQuery('');
+    }
+  }, [currentView]);
+
   // Handle item selection (checkbox toggle)
   const handleItemSelect = (item) => {
     if (currentView === 'make') {
@@ -653,32 +660,84 @@ const Filter = ({ onClose, onFilterChange }) => {
               </div>
               
               {/* Model children */}
-              {searchGroup.models.map((model, modelIndex) => (
-                <div
-                  key={`model-${modelIndex}`}
-                  className="filter-selection-item model-child"
-                  onClick={() => {
-                    // First select the make if not already selected
-                    if (!isItemSelected(searchGroup.make)) {
-                      handleItemSelect(searchGroup.make);
-                    }
-                    // Then navigate to model view for this specific make
-                    handleModelLinkClick(searchGroup.make);
-                  }}
-                  tabIndex={0}
-                  role="button"
-                  aria-label={`View ${model.name} models under ${searchGroup.make.name}`}
-                >
-                  <div className="filter-selection-content">
-                    <div className="filter-selection-left">
-                      <div className="filter-selection-text">
-                        <div className="filter-selection-name model-name">{model.name}</div>
-                        <div className="filter-selection-count">({model.count})</div>
+              {searchGroup.models.map((model, modelIndex) => {
+                // Create model object with make info for selection
+                const modelWithMake = {
+                  ...model,
+                  makeName: searchGroup.make.name
+                };
+                const isModelSelected = selectedModels.some(selected => 
+                  selected.name === model.name && selected.makeName === searchGroup.make.name
+                );
+                
+                return (
+                  <div
+                    key={`model-${modelIndex}`}
+                    className="filter-selection-item model-child"
+                    onClick={() => {
+                      // First select the make if not already selected
+                      if (!isItemSelected(searchGroup.make)) {
+                        handleItemSelect(searchGroup.make);
+                      }
+                      // Then select this specific model
+                      if (!isModelSelected) {
+                        setSelectedModels(prev => [...prev, modelWithMake]);
+                        // Update the filter change callback
+                        const newFilters = {
+                          make: searchGroup.make.name,
+                          model: model.name,
+                          trim: null
+                        };
+                        onFilterChange(newFilters);
+                      }
+                    }}
+                    tabIndex={0}
+                    role="button"
+                    aria-label={`Select ${model.name} under ${searchGroup.make.name}`}
+                  >
+                    <div className="filter-selection-content">
+                      <div className="filter-selection-left">
+                        {isModelSelected && (
+                          <div className="filter-checkbox">
+                            <svg viewBox="0 0 24 24" fill="none">
+                              <path
+                                d="M10 15.172L19.192 5.979L20.607 7.393L10 18L3.636 11.636L5.05 10.222L10 15.172Z"
+                                fill="white"
+                              />
+                            </svg>
+                          </div>
+                        )}
+                        <div className="filter-selection-text">
+                          <div className="filter-selection-name">{model.name}</div>
+                          <div className="filter-selection-count">({model.count})</div>
+                        </div>
                       </div>
+                      
+                      {isModelSelected && (
+                        <div className="filter-selection-right">
+                          <div 
+                            className="filter-model-link"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleTrimLinkClick(modelWithMake);
+                            }}
+                          >
+                            Trim
+                          </div>
+                          <div className="filter-model-arrow">
+                            <svg viewBox="0 0 13 8" fill="none">
+                              <path
+                                d="M6.364 4.95L11.314 0L12.728 1.414L6.364 7.778L0 1.414L1.414 0L6.364 4.95Z"
+                                fill="var(--blue-60)"
+                              />
+                            </svg>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           ))
         ) : (
