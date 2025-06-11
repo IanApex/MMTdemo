@@ -714,16 +714,32 @@ const Filter = ({ onClose, onFilterChange }) => {
                       if (!isItemSelected(searchGroup.make)) {
                         handleItemSelect(searchGroup.make);
                       }
-                      // Then select this specific model
-                      if (!isModelSelected) {
-                        setSelectedModels(prev => [...prev, modelWithMake]);
-                        // Update the filter change callback
-                        const newFilters = {
-                          make: searchGroup.make.name,
-                          model: model.name,
-                          trim: null
-                        };
-                        onFilterChange(newFilters);
+                      
+                      // Toggle model selection (select or deselect)
+                      if (isModelSelected) {
+                        // Remove from selection
+                        const newSelectedModels = selectedModels.filter(selected => 
+                          !(selected.name === model.name && selected.makeName === searchGroup.make.name)
+                        );
+                        setSelectedModels(newSelectedModels);
+                        
+                        // Notify parent component
+                        onFilterChange({
+                          makes: selectedMakes.map(make => make.name),
+                          models: newSelectedModels.map(model => `${model.makeName} ${model.name}`),
+                          trims: selectedTrims.map(trim => `${trim.makeName} ${trim.modelName} ${trim.name}`)
+                        });
+                      } else {
+                        // Add to selection
+                        const newSelectedModels = [...selectedModels, modelWithMake];
+                        setSelectedModels(newSelectedModels);
+                        
+                        // Notify parent component
+                        onFilterChange({
+                          makes: selectedMakes.map(make => make.name),
+                          models: newSelectedModels.map(model => `${model.makeName} ${model.name}`),
+                          trims: selectedTrims.map(trim => `${trim.makeName} ${trim.modelName} ${trim.name}`)
+                        });
                       }
                     }}
                     tabIndex={0}
