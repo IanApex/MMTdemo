@@ -546,19 +546,23 @@ const Filter = ({ onClose, onFilterChange }) => {
           </div>
           
           <button 
-            className="filter-close-button"
-            onClick={onClose}
-            aria-label="Close filter"
+            className="filter-reset-button"
+            onClick={() => {
+              // Reset all selections
+              setSelectedMakes([]);
+              setSelectedModels([]);
+              setSelectedTrims([]);
+              setSearchQuery('');
+              setCurrentView('make');
+              setContextualFilter({ forMake: null, forModel: null });
+              setHasNavigatedAway({ make: false, model: false, trim: false });
+              setPreNavigationSelections({ makes: [], models: [], trims: [] });
+              // Notify parent of reset
+              onFilterChange({ make: null, model: null, trim: null });
+            }}
+            aria-label="Reset all filters"
           >
-            <svg viewBox="0 0 24 24" fill="none">
-              <path
-                d="M18 6L6 18M6 6L18 18"
-                stroke="var(--park-gray-0)"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
+            Reset
           </button>
         </div>
         
@@ -583,15 +587,31 @@ const Filter = ({ onClose, onFilterChange }) => {
               onChange={handleSearchChange}
               aria-label={`Search ${getCurrentTitle().toLowerCase()}`}
             />
-            <div className="filter-search-icon">
-              <svg viewBox="0 0 24 24" fill="none">
-                <path
-                  clipRule="evenodd"
-                  fillRule="evenodd"
-                  d="M22.314 20.899L18.031 16.617C19.3082 15.0237 20.0029 13.042 20 11C20 6.032 15.968 2 11 2C6.032 2 2 6.032 2 11C2 15.968 6.032 20 11 20C13.042 20.0029 15.0237 19.3082 16.617 18.031L20.899 22.314L22.314 20.899ZM18 11C18.0029 12.8204 17.2941 14.5699 16.025 15.875L15.875 16.025C14.5699 17.2941 12.8204 18.0029 11 18C7.132 18 4 14.867 4 11C4 7.132 7.132 4 11 4C14.867 4 18 7.132 18 11Z"
-                  fill="var(--park-gray-0)"
-                />
-              </svg>
+            <div 
+              className="filter-search-icon"
+              onClick={searchQuery ? () => setSearchQuery('') : undefined}
+              style={{ cursor: searchQuery ? 'pointer' : 'default' }}
+            >
+              {searchQuery ? (
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="M18 6L6 18M6 6L18 18"
+                    stroke="var(--park-gray-0)"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none">
+                  <path
+                    clipRule="evenodd"
+                    fillRule="evenodd"
+                    d="M22.314 20.899L18.031 16.617C19.3082 15.0237 20.0029 13.042 20 11C20 6.032 15.968 2 11 2C6.032 2 2 6.032 2 11C2 15.968 6.032 20 11 20C13.042 20.0029 15.0237 19.3082 16.617 18.031L20.899 22.314L22.314 20.899ZM18 11C18.0029 12.8204 17.2941 14.5699 16.025 15.875L15.875 16.025C14.5699 17.2941 12.8204 18.0029 11 18C7.132 18 4 14.867 4 11C4 7.132 7.132 4 11 4C14.867 4 18 7.132 18 11Z"
+                    fill="var(--park-gray-0)"
+                  />
+                </svg>
+              )}
             </div>
           </div>
         </div>
@@ -599,8 +619,13 @@ const Filter = ({ onClose, onFilterChange }) => {
 
       {/* Selection List */}
       <div className="filter-selection-list">
-        {/* Handle hierarchical search results when searching */}
-        {searchQuery && searchQuery.length >= 2 && currentView === 'make' ? (
+        {/* Show "No results" when search has 2+ characters but no results */}
+        {searchQuery && searchQuery.length >= 2 && currentView === 'make' && filteredItems.length === 0 ? (
+          <div className="filter-no-results">
+            No results
+          </div>
+        ) : /* Handle hierarchical search results when searching */
+        searchQuery && searchQuery.length >= 2 && currentView === 'make' ? (
           filteredItems.map((searchGroup, groupIndex) => (
             <div key={`search-group-${groupIndex}`} className="filter-search-group">
               {/* Make header */}
