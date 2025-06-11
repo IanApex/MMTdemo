@@ -697,6 +697,18 @@ const Filter = ({ onClose, onFilterChange }) => {
                   >
                     <div className="filter-selection-content">
                       <div className="filter-selection-left">
+                        <div className="model-indicator">
+                          <svg viewBox="0 0 16 16" fill="none" className="model-L-indicator">
+                            <path
+                              d="M4 2V12H12"
+                              stroke="var(--park-gray-20)"
+                              strokeWidth="1.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              fill="none"
+                            />
+                          </svg>
+                        </div>
                         {isModelSelected && (
                           <div className="filter-checkbox">
                             <svg viewBox="0 0 24 24" fill="none">

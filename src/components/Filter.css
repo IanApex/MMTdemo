@@ -333,6 +333,7 @@
 .filter-selection-item.make-header {
   background-color: var(--white);
   font-weight: 600;
+  border-bottom: 1px solid var(--border-color);
 }
 
 .filter-selection-item.model-child {
@@ -345,7 +346,7 @@
 }
 
 .filter-selection-item.model-child .filter-selection-content {
-  padding-left: 40px; /* Increased left padding for visual hierarchy */
+  padding-left: 24px; /* Adjusted padding for L indicator */
 }
 
 .filter-selection-item.model-child .filter-selection-name {
@@ -353,12 +354,17 @@
   font-weight: var(--font-weight-regular);
 }
 
-/* Hide border-bottom for make headers when they have model children */
-.filter-search-group .filter-selection-item.make-header {
-  border-bottom: none;
+/* L-shaped indicator for model items */
+.model-indicator {
+  width: 16px;
+  height: 16px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
-/* Last model child in a group should have normal border */
-.filter-search-group .filter-selection-item.model-child:last-child {
-  border-bottom: 1px solid var(--border-color);
+.model-L-indicator {
+  width: 16px;
+  height: 16px;
 } 
