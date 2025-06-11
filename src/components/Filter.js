@@ -1,0 +1,693 @@
+import React, { useState, useEffect } from 'react';
+import './Filter.css';
+import { vehicleData, getModelsForMake, getTrimsForModel, searchVehicles } from '../data/vehicleData';
+
+const Filter = ({ onClose, onFilterChange }) => {
+  const [currentView, setCurrentView] = useState('make'); // 'make', 'model', 'trim'
+  const [selectedMakes, setSelectedMakes] = useState([]); // Array of selected makes
+  const [selectedModels, setSelectedModels] = useState([]); // Array of selected models
+  const [selectedTrims, setSelectedTrims] = useState([]); // Array of selected trims
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredItems, setFilteredItems] = useState([]);
+  const [hasNavigatedAway, setHasNavigatedAway] = useState({
+    make: false,
+    model: false,
+    trim: false
+  }); // Track if user has navigated away from each view
+  
+  const [preNavigationSelections, setPreNavigationSelections] = useState({
+    makes: [],
+    models: [],
+    trims: []
+  }); // Track items that were selected before navigation
+  
+  const [contextualFilter, setContextualFilter] = useState({
+    forMake: null, // When in model view, which make to show models for
+    forModel: null // When in trim view, which model to show trims for
+  }); // Track contextual filtering
+
+  // Initialize data based on current view
+  useEffect(() => {
+    let items = [];
+    
+    if (currentView === 'make') {
+      let allMakes = searchQuery ? searchVehicles(searchQuery, 'make') : vehicleData.makes;
+      
+      // Only separate items if user has navigated away and come back
+      if (hasNavigatedAway.make && preNavigationSelections.makes.length > 0) {
+        // Separate into three groups: pre-navigation selected, newly selected, and unselected
+        const preNavigationSelected = [];
+        const newlySelected = [];
+        const unselected = [];
+        
+        allMakes.forEach(make => {
+          const isPreNavigationSelected = preNavigationSelections.makes.some(selected => selected.name === make.name);
+          const isCurrentlySelected = selectedMakes.some(selected => selected.name === make.name);
+          
+          if (isPreNavigationSelected) {
+            preNavigationSelected.push(make);
+          } else if (isCurrentlySelected) {
+            newlySelected.push(make);
+          } else {
+            unselected.push(make);
+          }
+        });
+        
+        // Sort all arrays alphabetically
+        preNavigationSelected.sort((a, b) => a.name.localeCompare(b.name));
+        newlySelected.sort((a, b) => a.name.localeCompare(b.name));
+        unselected.sort((a, b) => a.name.localeCompare(b.name));
+        
+        // Combine: pre-navigation selected first, then newly selected mixed with unselected in original order
+        const bottomSection = [...newlySelected, ...unselected].sort((a, b) => a.name.localeCompare(b.name));
+        items = [...preNavigationSelected, ...bottomSection];
+      } else {
+        // Keep original order, just sort alphabetically
+        items = allMakes.sort((a, b) => a.name.localeCompare(b.name));
+      }
+      
+    } else if (currentView === 'model') {
+      // Show models for specific make if contextual filter is set, otherwise all selected makes
+      const allModels = [];
+      const makesToShow = contextualFilter.forMake ? [contextualFilter.forMake] : selectedMakes;
+      
+      makesToShow.forEach(make => {
+        const models = getModelsForMake(make.name);
+        models.forEach(model => {
+          allModels.push({
+            ...model,
+            makeName: make.name
+          });
+        });
+      });
+      
+      let filteredModels = searchQuery 
+        ? allModels.filter(model => model.name.toLowerCase().includes(searchQuery.toLowerCase()))
+        : allModels;
+      
+      // Only separate items if user has navigated away and come back
+      if (hasNavigatedAway.model && preNavigationSelections.models.length > 0) {
+        // Separate into three groups: pre-navigation selected, newly selected, and unselected
+        const preNavigationSelected = [];
+        const newlySelected = [];
+        const unselected = [];
+        
+        filteredModels.forEach(model => {
+          const isPreNavigationSelected = preNavigationSelections.models.some(selected => 
+            selected.name === model.name && selected.makeName === model.makeName
+          );
+          const isCurrentlySelected = selectedModels.some(selected => 
+            selected.name === model.name && selected.makeName === model.makeName
+          );
+          
+          if (isPreNavigationSelected) {
+            preNavigationSelected.push(model);
+          } else if (isCurrentlySelected) {
+            newlySelected.push(model);
+          } else {
+            unselected.push(model);
+          }
+        });
+        
+        // Sort all arrays alphabetically
+        preNavigationSelected.sort((a, b) => a.name.localeCompare(b.name));
+        newlySelected.sort((a, b) => a.name.localeCompare(b.name));
+        unselected.sort((a, b) => a.name.localeCompare(b.name));
+        
+        // Combine: pre-navigation selected first, then newly selected mixed with unselected
+        const bottomSection = [...newlySelected, ...unselected].sort((a, b) => a.name.localeCompare(b.name));
+        items = [...preNavigationSelected, ...bottomSection];
+      } else {
+        // Keep original order, just sort alphabetically
+        items = filteredModels.sort((a, b) => a.name.localeCompare(b.name));
+      }
+      
+    } else if (currentView === 'trim') {
+      // Show trims for specific model if contextual filter is set, otherwise all selected models
+      const allTrims = [];
+      const modelsToShow = contextualFilter.forModel ? [contextualFilter.forModel] : selectedModels;
+      
+      modelsToShow.forEach(model => {
+        const trims = getTrimsForModel(model.makeName, model.name);
+        trims.forEach(trim => {
+          allTrims.push({
+            ...trim,
+            makeName: model.makeName,
+            modelName: model.name
+          });
+        });
+      });
+      
+      let filteredTrims = searchQuery 
+        ? allTrims.filter(trim => trim.name.toLowerCase().includes(searchQuery.toLowerCase()))
+        : allTrims;
+      
+      // Only separate items if user has navigated away and come back
+      if (hasNavigatedAway.trim && preNavigationSelections.trims.length > 0) {
+        // Separate into three groups: pre-navigation selected, newly selected, and unselected
+        const preNavigationSelected = [];
+        const newlySelected = [];
+        const unselected = [];
+        
+        filteredTrims.forEach(trim => {
+          const isPreNavigationSelected = preNavigationSelections.trims.some(selected => 
+            selected.name === trim.name && 
+            selected.makeName === trim.makeName && 
+            selected.modelName === trim.modelName
+          );
+          const isCurrentlySelected = selectedTrims.some(selected => 
+            selected.name === trim.name && 
+            selected.makeName === trim.makeName && 
+            selected.modelName === trim.modelName
+          );
+          
+          if (isPreNavigationSelected) {
+            preNavigationSelected.push(trim);
+          } else if (isCurrentlySelected) {
+            newlySelected.push(trim);
+          } else {
+            unselected.push(trim);
+          }
+        });
+        
+        // Sort all arrays alphabetically
+        preNavigationSelected.sort((a, b) => a.name.localeCompare(b.name));
+        newlySelected.sort((a, b) => a.name.localeCompare(b.name));
+        unselected.sort((a, b) => a.name.localeCompare(b.name));
+        
+        // Combine: pre-navigation selected first, then newly selected mixed with unselected
+        const bottomSection = [...newlySelected, ...unselected].sort((a, b) => a.name.localeCompare(b.name));
+        items = [...preNavigationSelected, ...bottomSection];
+      } else {
+        // Keep original order, just sort alphabetically
+        items = filteredTrims.sort((a, b) => a.name.localeCompare(b.name));
+      }
+    }
+    
+    setFilteredItems(items);
+  }, [currentView, selectedMakes, selectedModels, selectedTrims, searchQuery]);
+
+  // Handle search input
+  const handleSearchChange = (e) => {
+    setSearchQuery(e.target.value);
+  };
+
+  // Handle item selection (checkbox toggle)
+  const handleItemSelect = (item) => {
+    if (currentView === 'make') {
+      const isSelected = selectedMakes.some(make => make.name === item.name);
+      let newSelectedMakes;
+      
+      if (isSelected) {
+        // Remove from selection
+        newSelectedMakes = selectedMakes.filter(make => make.name !== item.name);
+      } else {
+        // Add to selection
+        newSelectedMakes = [...selectedMakes, item];
+      }
+      
+      setSelectedMakes(newSelectedMakes);
+      
+      // Notify parent component
+      onFilterChange({
+        makes: newSelectedMakes.map(make => make.name),
+        models: selectedModels.map(model => `${model.makeName} ${model.name}`),
+        trims: selectedTrims.map(trim => `${trim.makeName} ${trim.modelName} ${trim.name}`)
+      });
+    } else if (currentView === 'model') {
+      const isSelected = selectedModels.some(model => 
+        model.name === item.name && model.makeName === item.makeName
+      );
+      let newSelectedModels;
+      
+      if (isSelected) {
+        // Remove from selection
+        newSelectedModels = selectedModels.filter(model => 
+          !(model.name === item.name && model.makeName === item.makeName)
+        );
+      } else {
+        // Add to selection
+        newSelectedModels = [...selectedModels, item];
+      }
+      
+      setSelectedModels(newSelectedModels);
+      
+      // Notify parent component
+      onFilterChange({
+        makes: selectedMakes.map(make => make.name),
+        models: newSelectedModels.map(model => `${model.makeName} ${model.name}`),
+        trims: selectedTrims.map(trim => `${trim.makeName} ${trim.modelName} ${trim.name}`)
+      });
+    } else if (currentView === 'trim') {
+      const isSelected = selectedTrims.some(trim => 
+        trim.name === item.name && trim.makeName === item.makeName && trim.modelName === item.modelName
+      );
+      let newSelectedTrims;
+      
+      if (isSelected) {
+        // Remove from selection
+        newSelectedTrims = selectedTrims.filter(trim => 
+          !(trim.name === item.name && trim.makeName === item.makeName && trim.modelName === item.modelName)
+        );
+      } else {
+        // Add to selection
+        newSelectedTrims = [...selectedTrims, item];
+      }
+      
+      setSelectedTrims(newSelectedTrims);
+      
+      // Notify parent component
+      onFilterChange({
+        makes: selectedMakes.map(make => make.name),
+        models: selectedModels.map(model => `${model.makeName} ${model.name}`),
+        trims: newSelectedTrims.map(trim => `${trim.makeName} ${trim.modelName} ${trim.name}`)
+      });
+    }
+  };
+
+  // Handle back navigation
+  const handleBack = () => {
+    if (currentView === 'model') {
+      setCurrentView('make');
+      setSearchQuery('');
+      // Clear contextual filter when going back
+      setContextualFilter(prev => ({ ...prev, forMake: null }));
+      // Mark that user is returning to make view after navigating away
+      setHasNavigatedAway(prev => ({ ...prev, make: true }));
+    } else if (currentView === 'trim') {
+      setCurrentView('model');
+      setSearchQuery('');
+      // Clear contextual filter when going back
+      setContextualFilter(prev => ({ ...prev, forModel: null }));
+      // Mark that user is returning to model view after navigating away
+      setHasNavigatedAway(prev => ({ ...prev, model: true }));
+    }
+  };
+
+  // Handle Model link click for a specific make
+  const handleModelLinkClick = (make) => {
+    // Merge existing pre-navigation selections with current selections
+    setPreNavigationSelections(prev => {
+      // For models: merge existing pre-navigation models with currently selected models
+      const allModelSelections = [...prev.models];
+      selectedModels.forEach(model => {
+        if (!allModelSelections.some(existing => 
+          existing.name === model.name && existing.makeName === model.makeName
+        )) {
+          allModelSelections.push(model);
+        }
+      });
+
+      // For trims: merge existing pre-navigation trims with currently selected trims  
+      const allTrimSelections = [...prev.trims];
+      selectedTrims.forEach(trim => {
+        if (!allTrimSelections.some(existing => 
+          existing.name === trim.name && 
+          existing.makeName === trim.makeName && 
+          existing.modelName === trim.modelName
+        )) {
+          allTrimSelections.push(trim);
+        }
+      });
+
+      return {
+        ...prev,
+        makes: [...selectedMakes], // snapshot current make selections
+        models: allModelSelections,
+        trims: allTrimSelections
+      };
+    });
+    
+    // Set contextual filter to show only this make's models
+    setContextualFilter(prev => ({
+      ...prev,
+      forMake: make
+    }));
+    
+    setCurrentView('model');
+    setSearchQuery('');
+    // Mark that user has navigated away from make view AND model view (if returning)
+    setHasNavigatedAway(prev => ({ 
+      ...prev, 
+      make: true,
+      model: true // Mark model as navigated away since we might be returning to it
+    }));
+  };
+
+  // Handle Trim link click for a specific model
+  const handleTrimLinkClick = (model) => {
+    // Merge existing pre-navigation selections with current selections
+    setPreNavigationSelections(prev => {
+      // For models: merge existing pre-navigation models with currently selected models
+      const allModelSelections = [...prev.models];
+      selectedModels.forEach(model => {
+        if (!allModelSelections.some(existing => 
+          existing.name === model.name && existing.makeName === model.makeName
+        )) {
+          allModelSelections.push(model);
+        }
+      });
+
+      // For trims: merge existing pre-navigation trims with currently selected trims
+      const allTrimSelections = [...prev.trims];
+      selectedTrims.forEach(trim => {
+        if (!allTrimSelections.some(existing => 
+          existing.name === trim.name && 
+          existing.makeName === trim.makeName && 
+          existing.modelName === trim.modelName
+        )) {
+          allTrimSelections.push(trim);
+        }
+      });
+
+      return {
+        ...prev,
+        models: allModelSelections,
+        trims: allTrimSelections
+      };
+    });
+    
+    // Set contextual filter to show only this model's trims
+    setContextualFilter(prev => ({
+      ...prev,
+      forModel: model
+    }));
+    
+    setCurrentView('trim');
+    setSearchQuery('');
+    // Mark that user has navigated away from model view AND trim view (if returning)
+    setHasNavigatedAway(prev => ({ 
+      ...prev, 
+      model: true,
+      trim: true // Mark trim as navigated away since we might be returning to it
+    }));
+  };
+
+  // Check if item is selected
+  const isItemSelected = (item) => {
+    if (currentView === 'make') {
+      return selectedMakes.some(make => make.name === item.name);
+    } else if (currentView === 'model') {
+      return selectedModels.some(model => 
+        model.name === item.name && model.makeName === item.makeName
+      );
+    } else if (currentView === 'trim') {
+      return selectedTrims.some(trim => 
+        trim.name === item.name && trim.makeName === item.makeName && trim.modelName === item.modelName
+      );
+    }
+    return false;
+  };
+
+  // Get current view title
+  const getCurrentTitle = () => {
+    switch (currentView) {
+      case 'make':
+        return 'Make';
+      case 'model':
+        return 'Model';
+      case 'trim':
+        return 'Trim';
+      default:
+        return 'Make';
+    }
+  };
+
+  // Breadcrumb navigation handlers
+  const handleBreadcrumbClick = (targetView) => {
+    if (targetView === 'make' && currentView !== 'make') {
+      setCurrentView('make');
+      setSearchQuery('');
+      // Clear contextual filter when going back via breadcrumb
+      setContextualFilter(prev => ({ ...prev, forMake: null, forModel: null }));
+      // Mark that user is returning to make view after navigating away
+      setHasNavigatedAway(prev => ({ ...prev, make: true }));
+    } else if (targetView === 'model' && currentView === 'trim') {
+      setCurrentView('model');
+      setSearchQuery('');
+      // Clear trim contextual filter but keep make filter
+      setContextualFilter(prev => ({ ...prev, forModel: null }));
+      // Mark that user is returning to model view after navigating away
+      setHasNavigatedAway(prev => ({ ...prev, model: true }));
+    }
+  };
+
+  // Render breadcrumb navigation
+  const renderBreadcrumb = () => {
+    if (currentView === 'make') {
+      return null; // No breadcrumb for make view
+    }
+
+    const breadcrumbItems = [];
+    
+    // Always show Make as clickable when not in make view
+    breadcrumbItems.push(
+      <span 
+        key="make"
+        className="breadcrumb-item clickable"
+        onClick={() => handleBreadcrumbClick('make')}
+      >
+        Make
+      </span>
+    );
+
+    if (currentView === 'model' || currentView === 'trim') {
+      breadcrumbItems.push(<span key="sep1" className="breadcrumb-separator">/</span>);
+      
+      if (currentView === 'model') {
+        breadcrumbItems.push(
+          <span key="model" className="breadcrumb-item current">Model</span>
+        );
+      } else {
+        // In trim view, model is clickable
+        breadcrumbItems.push(
+          <span 
+            key="model"
+            className="breadcrumb-item clickable"
+            onClick={() => handleBreadcrumbClick('model')}
+          >
+            Model
+          </span>
+        );
+      }
+    }
+
+    if (currentView === 'trim') {
+      breadcrumbItems.push(<span key="sep2" className="breadcrumb-separator">/</span>);
+      breadcrumbItems.push(
+        <span key="trim" className="breadcrumb-item current">Trim</span>
+      );
+    }
+
+    return (
+      <div className="filter-breadcrumb">
+        {breadcrumbItems}
+      </div>
+    );
+  };
+
+  // Get search placeholder
+  const getSearchPlaceholder = () => {
+    switch (currentView) {
+      case 'make':
+        return 'Search make or model';
+      case 'model':
+        return 'Search model';
+      case 'trim':
+        return 'Search trim';
+      default:
+        return 'Search make or model';
+    }
+  };
+
+  // Check if search should be shown (only for make view in this design)
+  const shouldShowSearch = () => {
+    return currentView === 'make';
+  };
+
+  return (
+    <div className="filter-container">
+      {/* Header */}
+      <div className="filter-header">
+        <div className="filter-header-top">
+          <div 
+            className="filter-back-section"
+            onClick={currentView !== 'make' ? handleBack : onClose}
+            tabIndex={0}
+            role="button"
+            aria-label={currentView !== 'make' ? 'Go back' : 'Close filters'}
+          >
+            <div className="filter-back-icon">
+              <svg viewBox="0 0 13 8" fill="none">
+                <path
+                  d="M6.364 4.95L11.314 0L12.728 1.414L6.364 7.778L0 1.414L1.414 0L6.364 4.95Z"
+                  fill="var(--blue-60)"
+                />
+              </svg>
+            </div>
+            <div className="filter-back-text">All filters</div>
+          </div>
+          
+          <button 
+            className="filter-close-button"
+            onClick={onClose}
+            aria-label="Close filter"
+          >
+            <svg viewBox="0 0 24 24" fill="none">
+              <path
+                d="M18 6L6 18M6 6L18 18"
+                stroke="var(--park-gray-0)"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+          </button>
+        </div>
+        
+        {currentView === 'make' ? (
+          <div className="filter-type-section">
+            <div className="filter-type-title">{getCurrentTitle()}</div>
+          </div>
+        ) : (
+          renderBreadcrumb()
+        )}
+      </div>
+
+      {/* Search Section - Only show for Make view */}
+      {shouldShowSearch() && (
+        <div className="filter-search-section">
+          <div className="filter-search-container">
+            <input
+              type="text"
+              className="filter-search-input"
+              placeholder={getSearchPlaceholder()}
+              value={searchQuery}
+              onChange={handleSearchChange}
+              aria-label={`Search ${getCurrentTitle().toLowerCase()}`}
+            />
+            <div className="filter-search-icon">
+              <svg viewBox="0 0 24 24" fill="none">
+                <path
+                  clipRule="evenodd"
+                  fillRule="evenodd"
+                  d="M22.314 20.899L18.031 16.617C19.3082 15.0237 20.0029 13.042 20 11C20 6.032 15.968 2 11 2C6.032 2 2 6.032 2 11C2 15.968 6.032 20 11 20C13.042 20.0029 15.0237 19.3082 16.617 18.031L20.899 22.314L22.314 20.899ZM18 11C18.0029 12.8204 17.2941 14.5699 16.025 15.875L15.875 16.025C14.5699 17.2941 12.8204 18.0029 11 18C7.132 18 4 14.867 4 11C4 7.132 7.132 4 11 4C14.867 4 18 7.132 18 11Z"
+                  fill="var(--park-gray-0)"
+                />
+              </svg>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Selection List */}
+      <div className="filter-selection-list">
+        {filteredItems.map((item, index) => {
+          const isSelected = isItemSelected(item);
+          
+          // Check if this item was selected before navigation (should have green background)
+          let wasPreNavigationSelected = false;
+          if (currentView === 'make') {
+            wasPreNavigationSelected = preNavigationSelections.makes.some(selected => selected.name === item.name);
+          } else if (currentView === 'model') {
+            wasPreNavigationSelected = preNavigationSelections.models.some(selected => 
+              selected.name === item.name && selected.makeName === item.makeName
+            );
+          } else if (currentView === 'trim') {
+            wasPreNavigationSelected = preNavigationSelections.trims.some(selected => 
+              selected.name === item.name && selected.makeName === item.makeName && selected.modelName === item.modelName
+            );
+          }
+          
+          const shouldShowAsSelectedGroup = wasPreNavigationSelected && (
+            (currentView === 'make' && hasNavigatedAway.make) ||
+            (currentView === 'model' && hasNavigatedAway.model) ||
+            (currentView === 'trim' && hasNavigatedAway.trim)
+          );
+          
+          return (
+            <div
+              key={`${item.name}-${index}`}
+              className={`filter-selection-item ${shouldShowAsSelectedGroup ? 'selected' : ''}`}
+              onClick={() => handleItemSelect(item)}
+              tabIndex={0}
+              role="button"
+              aria-label={`Select ${item.name}`}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleItemSelect(item);
+                }
+              }}
+            >
+              <div className="filter-selection-content">
+                <div className="filter-selection-left">
+                  {isSelected && (
+                    <div className="filter-checkbox">
+                      <svg viewBox="0 0 24 24" fill="none">
+                        <path
+                          d="M10 15.172L19.192 5.979L20.607 7.393L10 18L3.636 11.636L5.05 10.222L10 15.172Z"
+                          fill="white"
+                        />
+                      </svg>
+                    </div>
+                  )}
+                  <div className="filter-selection-text">
+                    <div className="filter-selection-name">{item.name}</div>
+                    <div className="filter-selection-count">({item.count})</div>
+                  </div>
+                </div>
+                
+                {isSelected && currentView === 'make' && (
+                  <div className="filter-selection-right">
+                    <div 
+                      className="filter-model-link"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleModelLinkClick(item);
+                      }}
+                    >
+                      Model
+                    </div>
+                    <div className="filter-model-arrow">
+                      <svg viewBox="0 0 13 8" fill="none">
+                        <path
+                          d="M6.364 4.95L11.314 0L12.728 1.414L6.364 7.778L0 1.414L1.414 0L6.364 4.95Z"
+                          fill="var(--blue-60)"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                )}
+                
+                {isSelected && currentView === 'model' && (
+                  <div className="filter-selection-right">
+                    <div 
+                      className="filter-model-link"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTrimLinkClick(item);
+                      }}
+                    >
+                      Trim
+                    </div>
+                    <div className="filter-model-arrow">
+                      <svg viewBox="0 0 13 8" fill="none">
+                        <path
+                          d="M6.364 4.95L11.314 0L12.728 1.414L6.364 7.778L0 1.414L1.414 0L6.364 4.95Z"
+                          fill="var(--blue-60)"
+                        />
+                      </svg>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+};
+
+export default Filter; 

@@ -1,0 +1,72 @@
+/* Global CSS Variables from Figma Design System */
+:root {
+  /* Colors */
+  --blue-60: #006FA6;
+  --text-input-active: #242C33;
+  --park-gray-20: #666B70;
+  --park-gray-0: #242C33;
+  --park-gray-100: #F4F5F7;
+  --white: #FFFFFF;
+  --border-color: #E8E9EB;
+  --green-50: #3E8500;
+  --green-90: #EAF5DC;
+  --input-default: #A2A6AB;
+  
+  /* Typography */
+  --font-family: 'Roboto', sans-serif;
+  --font-weight-light: 300;
+  --font-weight-regular: 400;
+  --font-weight-bold: 700;
+  
+  /* Font Sizes & Line Heights */
+  --body-sm-size: 14px;
+  --body-sm-line-height: 22px;
+  --body-lg-size: 16px;
+  --body-lg-line-height: 24px;
+}
+
+/* Reset and Base Styles */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-regular);
+  color: var(--park-gray-0);
+  background-color: var(--white);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button {
+  font-family: inherit;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+input {
+  font-family: inherit;
+  border: none;
+  outline: none;
+}
+
+ul, ol {
+  list-style: none;
+}
+
+/* Utility Classes */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+} 

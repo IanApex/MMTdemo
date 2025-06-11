@@ -1,0 +1,325 @@
+/* Filter Component Styles - Based on Figma Design */
+
+.filter-container {
+  background-color: var(--white);
+  width: 100%;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header Section */
+.filter-header {
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px 0;
+}
+
+.filter-header-top {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 2px 24px;
+}
+
+.filter-back-section {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+  height: 24px;
+}
+
+.filter-back-icon {
+  width: 13px;
+  height: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transform: rotate(90deg);
+}
+
+.filter-back-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+.filter-back-text {
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-bold);
+  font-size: var(--body-lg-size);
+  line-height: var(--body-lg-line-height);
+  color: var(--blue-60);
+  white-space: nowrap;
+}
+
+.filter-close-button {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.filter-close-button svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Filter Type Section */
+.filter-type-section {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 0 24px;
+  gap: 84px;
+}
+
+.filter-type-title {
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-regular);
+  font-size: var(--body-sm-size);
+  line-height: var(--body-sm-line-height);
+  color: var(--park-gray-0);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Breadcrumb Navigation */
+.filter-breadcrumb {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 0 24px;
+  gap: 16px;
+  width: fit-content;
+}
+
+.breadcrumb-item {
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-regular);
+  font-size: var(--body-sm-size);
+  line-height: var(--body-sm-line-height);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.breadcrumb-item.clickable {
+  color: var(--blue-60);
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+.breadcrumb-item.clickable:hover {
+  opacity: 0.8;
+}
+
+.breadcrumb-item.current {
+  color: var(--park-gray-0);
+}
+
+.breadcrumb-separator {
+  color: var(--input-default);
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-regular);
+  font-size: var(--body-sm-size);
+  line-height: var(--body-sm-line-height);
+  flex-shrink: 0;
+}
+
+/* Search Section */
+.filter-search-section {
+  background-color: var(--park-gray-100);
+  border-top: 1px solid var(--border-color);
+  border-bottom: 1px solid var(--border-color);
+  width: 100%;
+  flex-shrink: 0;
+}
+
+.filter-search-container {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 16px 24px;
+  gap: 24px;
+}
+
+.filter-search-input {
+  flex: 1;
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-regular);
+  font-size: var(--body-lg-size);
+  line-height: var(--body-lg-line-height);
+  color: var(--park-gray-20);
+  background: transparent;
+  border: none;
+  outline: none;
+}
+
+.filter-search-input::placeholder {
+  color: var(--park-gray-20);
+}
+
+.filter-search-input:focus {
+  color: var(--park-gray-0);
+}
+
+.filter-search-icon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.filter-search-icon svg {
+  width: 100%;
+  height: 100%;
+}
+
+/* Selection List */
+.filter-selection-list {
+  background-color: var(--white);
+  border-top: 1px solid var(--border-color);
+  flex: 1;
+  overflow-y: auto;
+  width: 100%;
+}
+
+.filter-selection-item {
+  background-color: var(--white);
+  border-bottom: 1px solid var(--border-color);
+  width: 100%;
+  cursor: pointer;
+  transition: background-color 0.2s ease;
+}
+
+.filter-selection-item:hover {
+  background-color: #f8f9fa;
+}
+
+.filter-selection-item:last-child {
+  border-bottom: none;
+}
+
+.filter-selection-item.selected {
+  background-color: var(--green-90);
+}
+
+.filter-selection-item.selected:hover {
+  background-color: var(--green-90);
+}
+
+.filter-selection-content {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  gap: 4px;
+}
+
+.filter-selection-left {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-selection-right {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+}
+
+.filter-checkbox {
+  width: 24px;
+  height: 24px;
+  border-radius: 4px;
+  background-color: var(--green-50);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.filter-checkbox svg {
+  width: 100%;
+  height: 100%;
+}
+
+.filter-model-link {
+  font-family: var(--font-family);
+  font-weight: 600;
+  font-size: 12px;
+  line-height: var(--body-lg-line-height);
+  color: var(--blue-60);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.filter-model-arrow {
+  width: 13px;
+  height: 8px;
+  transform: rotate(270deg);
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.filter-model-arrow svg {
+  width: 100%;
+  height: 100%;
+}
+
+.filter-selection-name {
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-regular);
+  font-size: var(--body-lg-size);
+  line-height: var(--body-lg-line-height);
+  color: var(--park-gray-0);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.filter-selection-text {
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 4px;
+}
+
+.filter-selection-count {
+  font-family: var(--font-family);
+  font-weight: var(--font-weight-light);
+  font-size: var(--body-lg-size);
+  line-height: var(--body-lg-line-height);
+  color: var(--park-gray-20);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .filter-container {
+    height: 100vh;
+  }
+  
+  .filter-type-section {
+    gap: 40px;
+  }
+}
+
+/* Focus states for accessibility */
+.filter-selection-item:focus {
+  outline: 2px solid var(--blue-60);
+  outline-offset: -2px;
+}
+
+.filter-close-button:focus,
+.filter-back-section:focus {
+  outline: 2px solid var(--blue-60);
+  outline-offset: 2px;
+  border-radius: 4px;
+} 
