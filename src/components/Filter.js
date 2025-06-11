@@ -661,14 +661,24 @@ const Filter = ({ onClose, onFilterChange }) => {
                   </div>
                   
                   {isItemSelected(searchGroup.make) && (
-                    <div className="filter-selection-right">
-                      <div 
-                        className="filter-model-link"
-                        onClick={(e) => {
+                    <div 
+                      className="filter-selection-right"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleModelLinkClick(searchGroup.make);
+                      }}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`Go to ${searchGroup.make.name} models`}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
                           e.stopPropagation();
                           handleModelLinkClick(searchGroup.make);
-                        }}
-                      >
+                        }
+                      }}
+                    >
+                      <div className="filter-model-link">
                         Model
                       </div>
                       <div className="filter-model-arrow">
@@ -751,14 +761,24 @@ const Filter = ({ onClose, onFilterChange }) => {
                       </div>
                       
                       {isModelSelected && (
-                        <div className="filter-selection-right">
-                          <div 
-                            className="filter-model-link"
-                            onClick={(e) => {
+                        <div 
+                          className="filter-selection-right"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleTrimLinkClick(modelWithMake);
+                          }}
+                          tabIndex={0}
+                          role="button"
+                          aria-label={`Go to ${model.name} trims`}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
                               e.stopPropagation();
                               handleTrimLinkClick(modelWithMake);
-                            }}
-                          >
+                            }
+                          }}
+                        >
+                          <div className="filter-model-link">
                             Trim
                           </div>
                           <div className="filter-model-arrow">
@@ -836,14 +856,24 @@ const Filter = ({ onClose, onFilterChange }) => {
                   </div>
                   
                   {isSelected && currentView === 'make' && (
-                    <div className="filter-selection-right">
-                      <div 
-                        className="filter-model-link"
-                        onClick={(e) => {
+                    <div 
+                      className="filter-selection-right"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleModelLinkClick(item);
+                      }}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`Go to ${item.name} models`}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
                           e.stopPropagation();
                           handleModelLinkClick(item);
-                        }}
-                      >
+                        }
+                      }}
+                    >
+                      <div className="filter-model-link">
                         Model
                       </div>
                       <div className="filter-model-arrow">
@@ -858,14 +888,24 @@ const Filter = ({ onClose, onFilterChange }) => {
                   )}
                   
                   {isSelected && currentView === 'model' && (
-                    <div className="filter-selection-right">
-                      <div 
-                        className="filter-model-link"
-                        onClick={(e) => {
+                    <div 
+                      className="filter-selection-right"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTrimLinkClick(item);
+                      }}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`Go to ${item.name} trims`}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
                           e.stopPropagation();
                           handleTrimLinkClick(item);
-                        }}
-                      >
+                        }
+                      }}
+                    >
+                      <div className="filter-model-link">
                         Trim
                       </div>
                       <div className="filter-model-arrow">

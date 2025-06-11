@@ -237,6 +237,18 @@
   flex-direction: row;
   align-items: center;
   gap: 4px;
+  cursor: pointer;
+  padding: 8px 12px;
+  margin: -8px -12px;
+  border-radius: 4px;
+  transition: background-color 0.2s ease;
+}
+
+
+
+.filter-selection-right:focus-visible {
+  outline: 2px solid var(--blue-60);
+  outline-offset: 2px;
 }
 
 .filter-checkbox {
@@ -263,6 +275,11 @@
   color: var(--blue-60);
   white-space: nowrap;
   flex-shrink: 0;
+  transition: text-decoration 0.2s ease;
+}
+
+.filter-selection-right:hover .filter-model-link {
+  text-decoration: underline;
 }
 
 .filter-model-arrow {
@@ -288,6 +305,11 @@
   color: var(--park-gray-0);
   white-space: nowrap;
   flex-shrink: 0;
+  transition: text-decoration 0.2s ease;
+}
+
+.filter-selection-item:hover .filter-selection-name {
+  text-decoration: underline;
 }
 
 .filter-selection-text {
@@ -319,7 +341,7 @@
 }
 
 /* Focus states for accessibility */
-.filter-selection-item:focus {
+.filter-selection-item:focus-visible {
   outline: 2px solid var(--blue-60);
   outline-offset: -2px;
 }
