@@ -1,0 +1,13 @@
+{
+  "files": {
+    "main.css": "/MMTdemo/static/css/main.0495d2b4.css",
+    "main.js": "/MMTdemo/static/js/main.ceb6f64a.js",
+    "index.html": "/MMTdemo/index.html",
+    "main.0495d2b4.css.map": "/MMTdemo/static/css/main.0495d2b4.css.map",
+    "main.ceb6f64a.js.map": "/MMTdemo/static/js/main.ceb6f64a.js.map"
+  },
+  "entrypoints": [
+    "static/css/main.0495d2b4.css",
+    "static/js/main.ceb6f64a.js"
+  ]
+}
