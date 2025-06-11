@@ -330,9 +330,9 @@ export const getTrimsForModel = (makeName, modelName) => {
   return vehicleData.trims[key] || [];
 };
 
-// Helper function to search makes/models
+// Enhanced search that includes both makes and models with hierarchical grouping
 export const searchVehicles = (query, type = 'make') => {
-  if (!query) return [];
+  if (!query || query.length < 2) return [];
   
   const searchTerm = query.toLowerCase();
   
@@ -342,19 +342,45 @@ export const searchVehicles = (query, type = 'make') => {
     );
   }
   
-  // Search across all makes and their models
-  const results = [];
-  Object.entries(vehicleData.models).forEach(([makeName, models]) => {
-    models.forEach(model => {
-      if (model.name.toLowerCase().includes(searchTerm)) {
-        results.push({
-          make: makeName,
-          model: model.name,
-          count: model.count
+  // Enhanced search that finds both makes and models, grouped hierarchically
+  const results = new Map(); // Using Map to maintain order and group by make
+  
+  // First, search for matching makes
+  vehicleData.makes.forEach(make => {
+    if (make.name.toLowerCase().includes(searchTerm)) {
+      if (!results.has(make.name)) {
+        results.set(make.name, {
+          make: make,
+          models: [],
+          isMatchingMake: true
         });
       }
-    });
+    }
   });
   
-  return results;
+  // Then search for matching models and group them under their makes
+  Object.entries(vehicleData.models).forEach(([makeName, models]) => {
+    const matchingModels = models.filter(model => 
+      model.name.toLowerCase().includes(searchTerm)
+    );
+    
+    if (matchingModels.length > 0) {
+      if (!results.has(makeName)) {
+        // Find the make object
+        const makeObj = vehicleData.makes.find(m => m.name === makeName);
+        results.set(makeName, {
+          make: makeObj,
+          models: matchingModels,
+          isMatchingMake: false
+        });
+      } else {
+        // Add models to existing make entry
+        const existing = results.get(makeName);
+        existing.models = [...existing.models, ...matchingModels];
+      }
+    }
+  });
+  
+  // Convert Map to array while maintaining hierarchical structure
+  return Array.from(results.values());
 }; 

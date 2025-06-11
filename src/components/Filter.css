@@ -322,4 +322,45 @@
   outline: 2px solid var(--blue-60);
   outline-offset: 2px;
   border-radius: 4px;
+}
+
+/* Hierarchical Search Results */
+.filter-search-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.filter-selection-item.make-header {
+  background-color: var(--white);
+  font-weight: 600;
+}
+
+.filter-selection-item.model-child {
+  background-color: #f8f9fa;
+  border-left: 4px solid var(--blue-60);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.filter-selection-item.model-child:hover {
+  background-color: #e9ecef;
+}
+
+.filter-selection-item.model-child .filter-selection-content {
+  padding-left: 40px; /* Increased left padding for visual hierarchy */
+}
+
+.filter-selection-item.model-child .filter-selection-name.model-name {
+  color: var(--park-gray-0);
+  font-weight: var(--font-weight-regular);
+  font-style: italic;
+}
+
+/* Hide border-bottom for make headers when they have model children */
+.filter-search-group .filter-selection-item.make-header {
+  border-bottom: none;
+}
+
+/* Last model child in a group should have normal border */
+.filter-search-group .filter-selection-item.model-child:last-child {
+  border-bottom: 1px solid var(--border-color);
 } 
