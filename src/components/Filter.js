@@ -475,6 +475,11 @@ const Filter = ({ onClose, onFilterChange }) => {
 
   // Get current view title
   const getCurrentTitle = () => {
+    // Show "Searching make/model" when there's a search query in make view
+    if (currentView === 'make' && searchQuery && searchQuery.length >= 2) {
+      return 'Searching make/model';
+    }
+    
     switch (currentView) {
       case 'make':
         return 'Make';

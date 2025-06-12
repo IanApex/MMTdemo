@@ -588,7 +588,7 @@ export const searchVehicles = (query, type = 'make') => {
   
   if (type === 'make') {
     return vehicleData.makes.filter(make => 
-      make.name.toLowerCase().includes(searchTerm)
+      make.name.toLowerCase().startsWith(searchTerm)
     );
   }
   
@@ -597,7 +597,7 @@ export const searchVehicles = (query, type = 'make') => {
   
   // First, search for matching makes
   vehicleData.makes.forEach(make => {
-    if (make.name.toLowerCase().includes(searchTerm)) {
+    if (make.name.toLowerCase().startsWith(searchTerm)) {
       if (!results.has(make.name)) {
         results.set(make.name, {
           make: make,
@@ -611,7 +611,7 @@ export const searchVehicles = (query, type = 'make') => {
   // Then search for matching models and group them under their makes
   Object.entries(vehicleData.models).forEach(([makeName, models]) => {
     const matchingModels = models.filter(model => 
-      model.name.toLowerCase().includes(searchTerm)
+      model.name.toLowerCase().startsWith(searchTerm)
     );
     
     if (matchingModels.length > 0) {
