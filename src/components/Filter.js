@@ -26,6 +26,12 @@ const Filter = ({ onClose, onFilterChange }) => {
     forModel: null // When in trim view, which model to show trims for
   }); // Track contextual filtering
 
+  // Transition state management
+  const [isTransitioning, setIsTransitioning] = useState(false);
+  const [transitionDirection, setTransitionDirection] = useState('forward'); // 'forward' or 'backward'
+  const [previousView, setPreviousView] = useState(null);
+  const [previousItems, setPreviousItems] = useState([]);
+
   // Initialize data based on current view
   useEffect(() => {
     let items = [];
@@ -209,6 +215,40 @@ const Filter = ({ onClose, onFilterChange }) => {
     }
   }, [currentView]);
 
+  // Helper function to handle view transitions
+  const navigateToView = (newView, direction = 'forward', contextualData = {}) => {
+    if (isTransitioning || newView === currentView) return;
+
+    // Store current view data for transition
+    setPreviousView(currentView);
+    setPreviousItems([...filteredItems]);
+    setTransitionDirection(direction);
+    setIsTransitioning(true);
+
+    // Apply contextual filters
+    Object.keys(contextualData).forEach(key => {
+      if (contextualData[key] !== undefined) {
+        setContextualFilter(prev => ({
+          ...prev,
+          [key]: contextualData[key]
+        }));
+      }
+    });
+
+    // Start transition immediately
+    setTimeout(() => {
+      setCurrentView(newView);
+      setSearchQuery('');
+      
+      // Complete transition after CSS animation
+      setTimeout(() => {
+        setIsTransitioning(false);
+        setPreviousView(null);
+        setPreviousItems([]);
+      }, 300); // Match CSS transition duration
+    }, 10); // Small delay to ensure proper initial state
+  };
+
   // Handle item selection (checkbox toggle)
   const handleItemSelect = (item) => {
     if (currentView === 'make') {
@@ -304,19 +344,17 @@ const Filter = ({ onClose, onFilterChange }) => {
   // Handle back navigation
   const handleBack = () => {
     if (currentView === 'model') {
-      setCurrentView('make');
-      setSearchQuery('');
       // Clear contextual filter when going back
       setContextualFilter(prev => ({ ...prev, forMake: null }));
       // Mark that user is returning to make view after navigating away
       setHasNavigatedAway(prev => ({ ...prev, make: true }));
+      navigateToView('make', 'backward');
     } else if (currentView === 'trim') {
-      setCurrentView('model');
-      setSearchQuery('');
       // Clear contextual filter when going back
       setContextualFilter(prev => ({ ...prev, forModel: null }));
       // Mark that user is returning to model view after navigating away
       setHasNavigatedAway(prev => ({ ...prev, model: true }));
+      navigateToView('model', 'backward');
     }
   };
 
@@ -354,20 +392,15 @@ const Filter = ({ onClose, onFilterChange }) => {
       };
     });
     
-    // Set contextual filter to show only this make's models
-    setContextualFilter(prev => ({
-      ...prev,
-      forMake: make
-    }));
-    
-    setCurrentView('model');
-    setSearchQuery('');
     // Mark that user has navigated away from make view AND model view (if returning)
     setHasNavigatedAway(prev => ({ 
       ...prev, 
       make: true,
       model: true // Mark model as navigated away since we might be returning to it
     }));
+
+    // Navigate to model view with transition
+    navigateToView('model', 'forward', { forMake: make });
   };
 
   // Handle Trim link click for a specific model
@@ -403,20 +436,15 @@ const Filter = ({ onClose, onFilterChange }) => {
       };
     });
     
-    // Set contextual filter to show only this model's trims
-    setContextualFilter(prev => ({
-      ...prev,
-      forModel: model
-    }));
-    
-    setCurrentView('trim');
-    setSearchQuery('');
     // Mark that user has navigated away from model view AND trim view (if returning)
     setHasNavigatedAway(prev => ({ 
       ...prev, 
       model: true,
       trim: true // Mark trim as navigated away since we might be returning to it
     }));
+
+    // Navigate to trim view with transition
+    navigateToView('trim', 'forward', { forModel: model });
   };
 
   // Check if item is selected
@@ -452,19 +480,17 @@ const Filter = ({ onClose, onFilterChange }) => {
   // Breadcrumb navigation handlers
   const handleBreadcrumbClick = (targetView) => {
     if (targetView === 'make' && currentView !== 'make') {
-      setCurrentView('make');
-      setSearchQuery('');
       // Clear contextual filter when going back via breadcrumb
       setContextualFilter(prev => ({ ...prev, forMake: null, forModel: null }));
       // Mark that user is returning to make view after navigating away
       setHasNavigatedAway(prev => ({ ...prev, make: true }));
+      navigateToView('make', 'backward');
     } else if (targetView === 'model' && currentView === 'trim') {
-      setCurrentView('model');
-      setSearchQuery('');
       // Clear trim contextual filter but keep make filter
       setContextualFilter(prev => ({ ...prev, forModel: null }));
       // Mark that user is returning to model view after navigating away
       setHasNavigatedAway(prev => ({ ...prev, model: true }));
+      navigateToView('model', 'backward');
     }
   };
 
@@ -539,6 +565,334 @@ const Filter = ({ onClose, onFilterChange }) => {
   // Check if search should be shown (only for make view in this design)
   const shouldShowSearch = () => {
     return currentView === 'make';
+  };
+
+  // Helper function to render list content for a given view and items
+  const renderListContent = (view, items, isSearchMode = false) => {
+    // Show "No results" when search has 2+ characters but no results
+    if (searchQuery && searchQuery.length >= 2 && view === 'make' && items.length === 0) {
+      return (
+        <div className="filter-no-results">
+          No results
+        </div>
+      );
+    }
+
+    // Handle hierarchical search results when searching
+    if (searchQuery && searchQuery.length >= 2 && view === 'make') {
+      return items.map((searchGroup, groupIndex) => (
+        <div key={`search-group-${groupIndex}`} className="filter-search-group">
+          {/* Make header */}
+          <div
+            className={`filter-selection-item make-header ${isItemSelected(searchGroup.make) ? 'selected' : ''}`}
+            onClick={() => handleItemSelect(searchGroup.make)}
+            tabIndex={0}
+            role="button"
+            aria-label={`Select ${searchGroup.make.name}`}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleItemSelect(searchGroup.make);
+              }
+            }}
+          >
+            <div className="filter-selection-content">
+              <div className="filter-selection-left">
+                {isItemSelected(searchGroup.make) && (
+                  <div className="filter-checkbox">
+                    <svg viewBox="0 0 24 24" fill="none">
+                      <path
+                        d="M10 15.172L19.192 5.979L20.607 7.393L10 18L3.636 11.636L5.05 10.222L10 15.172Z"
+                        fill="white"
+                      />
+                    </svg>
+                  </div>
+                )}
+                <div className="filter-selection-text">
+                  <div className="filter-selection-name">{searchGroup.make.name}</div>
+                  <div className="filter-selection-count">({searchGroup.make.count})</div>
+                </div>
+              </div>
+              
+              {isItemSelected(searchGroup.make) && (
+                <div 
+                  className="filter-selection-right"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleModelLinkClick(searchGroup.make);
+                  }}
+                  tabIndex={0}
+                  role="button"
+                  aria-label={`Go to ${searchGroup.make.name} models`}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      handleModelLinkClick(searchGroup.make);
+                    }
+                  }}
+                >
+                  <div className="filter-model-link">
+                    Model
+                  </div>
+                  <div className="filter-model-arrow">
+                    <svg viewBox="0 0 13 8" fill="none">
+                      <path
+                        d="M6.364 4.95L11.314 0L12.728 1.414L6.364 7.778L0 1.414L1.414 0L6.364 4.95Z"
+                        fill="var(--blue-60)"
+                      />
+                    </svg>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+          
+          {/* Model children */}
+          {searchGroup.models.map((model, modelIndex) => {
+            // Create model object with make info for selection
+            const modelWithMake = {
+              ...model,
+              makeName: searchGroup.make.name
+            };
+            const isModelSelected = selectedModels.some(selected => 
+              selected.name === model.name && selected.makeName === searchGroup.make.name
+            );
+            
+            return (
+              <div
+                key={`model-${modelIndex}`}
+                className="filter-selection-item model-child"
+                onClick={() => {
+                  // First select the make if not already selected
+                  if (!isItemSelected(searchGroup.make)) {
+                    handleItemSelect(searchGroup.make);
+                  }
+                  
+                  // Toggle model selection (select or deselect)
+                  if (isModelSelected) {
+                    // Remove from selection
+                    const newSelectedModels = selectedModels.filter(selected => 
+                      !(selected.name === model.name && selected.makeName === searchGroup.make.name)
+                    );
+                    setSelectedModels(newSelectedModels);
+                    
+                    // Notify parent component
+                    onFilterChange({
+                      makes: selectedMakes.map(make => make.name),
+                      models: newSelectedModels.map(model => `${model.makeName} ${model.name}`),
+                      trims: selectedTrims.map(trim => `${trim.makeName} ${trim.modelName} ${trim.name}`)
+                    });
+                  } else {
+                    // Add to selection
+                    const newSelectedModels = [...selectedModels, modelWithMake];
+                    setSelectedModels(newSelectedModels);
+                    
+                    // Notify parent component
+                    onFilterChange({
+                      makes: selectedMakes.map(make => make.name),
+                      models: newSelectedModels.map(model => `${model.makeName} ${model.name}`),
+                      trims: selectedTrims.map(trim => `${trim.makeName} ${trim.modelName} ${trim.name}`)
+                    });
+                  }
+                }}
+                tabIndex={0}
+                role="button"
+                aria-label={`Select ${model.name} under ${searchGroup.make.name}`}
+              >
+                <div className="filter-selection-content">
+                  <div className="filter-selection-left">
+                    <div className="model-indicator">
+                      <svg viewBox="0 0 16 16" fill="none" className="model-L-indicator">
+                        <path
+                          d="M4 2V12H12"
+                          stroke="var(--park-gray-20)"
+                          strokeWidth="1.5"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          fill="none"
+                        />
+                      </svg>
+                    </div>
+                    {isModelSelected && (
+                      <div className="filter-checkbox">
+                        <svg viewBox="0 0 24 24" fill="none">
+                          <path
+                            d="M10 15.172L19.192 5.979L20.607 7.393L10 18L3.636 11.636L5.05 10.222L10 15.172Z"
+                            fill="white"
+                          />
+                        </svg>
+                      </div>
+                    )}
+                    <div className="filter-selection-text">
+                      <div className="filter-selection-name">{model.name}</div>
+                      <div className="filter-selection-count">({model.count})</div>
+                    </div>
+                  </div>
+                  
+                  {isModelSelected && (
+                    <div 
+                      className="filter-selection-right"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleTrimLinkClick(modelWithMake);
+                      }}
+                      tabIndex={0}
+                      role="button"
+                      aria-label={`Go to ${model.name} trims`}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          e.stopPropagation();
+                          handleTrimLinkClick(modelWithMake);
+                        }
+                      }}
+                    >
+                      <div className="filter-model-link">
+                        Trim
+                      </div>
+                      <div className="filter-model-arrow">
+                        <svg viewBox="0 0 13 8" fill="none">
+                          <path
+                            d="M6.364 4.95L11.314 0L12.728 1.414L6.364 7.778L0 1.414L1.414 0L6.364 4.95Z"
+                            fill="var(--blue-60)"
+                          />
+                        </svg>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      ));
+    }
+
+    // Regular view - show normal items
+    return items.map((item, index) => {
+      const isSelected = isItemSelected(item);
+      
+      // Check if this item was selected before navigation (should have green background)
+      let wasPreNavigationSelected = false;
+      if (view === 'make') {
+        wasPreNavigationSelected = preNavigationSelections.makes.some(selected => selected.name === item.name);
+      } else if (view === 'model') {
+        wasPreNavigationSelected = preNavigationSelections.models.some(selected => 
+          selected.name === item.name && selected.makeName === item.makeName
+        );
+      } else if (view === 'trim') {
+        wasPreNavigationSelected = preNavigationSelections.trims.some(selected => 
+          selected.name === item.name && selected.makeName === item.makeName && selected.modelName === item.modelName
+        );
+      }
+      
+      const shouldShowAsSelectedGroup = wasPreNavigationSelected && (
+        (view === 'make' && hasNavigatedAway.make) ||
+        (view === 'model' && hasNavigatedAway.model) ||
+        (view === 'trim' && hasNavigatedAway.trim)
+      );
+      
+      return (
+        <div
+          key={`${item.name}-${index}`}
+          className={`filter-selection-item ${shouldShowAsSelectedGroup ? 'selected' : ''}`}
+          onClick={() => handleItemSelect(item)}
+          tabIndex={0}
+          role="button"
+          aria-label={`Select ${item.name}`}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleItemSelect(item);
+            }
+          }}
+        >
+          <div className="filter-selection-content">
+            <div className="filter-selection-left">
+              {isSelected && (
+                <div className="filter-checkbox">
+                  <svg viewBox="0 0 24 24" fill="none">
+                    <path
+                      d="M10 15.172L19.192 5.979L20.607 7.393L10 18L3.636 11.636L5.05 10.222L10 15.172Z"
+                      fill="white"
+                    />
+                  </svg>
+                </div>
+              )}
+              <div className="filter-selection-text">
+                <div className="filter-selection-name">{item.name}</div>
+                <div className="filter-selection-count">({item.count})</div>
+              </div>
+            </div>
+            
+            {isSelected && view === 'make' && (
+              <div 
+                className="filter-selection-right"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleModelLinkClick(item);
+                }}
+                tabIndex={0}
+                role="button"
+                aria-label={`Go to ${item.name} models`}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleModelLinkClick(item);
+                  }
+                }}
+              >
+                <div className="filter-model-link">
+                  Model
+                </div>
+                <div className="filter-model-arrow">
+                  <svg viewBox="0 0 13 8" fill="none">
+                    <path
+                      d="M6.364 4.95L11.314 0L12.728 1.414L6.364 7.778L0 1.414L1.414 0L6.364 4.95Z"
+                      fill="var(--blue-60)"
+                    />
+                  </svg>
+                </div>
+              </div>
+            )}
+            
+            {isSelected && view === 'model' && (
+              <div 
+                className="filter-selection-right"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleTrimLinkClick(item);
+                }}
+                tabIndex={0}
+                role="button"
+                aria-label={`Go to ${item.name} trims`}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleTrimLinkClick(item);
+                  }
+                }}
+              >
+                <div className="filter-model-link">
+                  Trim
+                </div>
+                <div className="filter-model-arrow">
+                  <svg viewBox="0 0 13 8" fill="none">
+                    <path
+                      d="M6.364 4.95L11.314 0L12.728 1.414L6.364 7.778L0 1.414L1.414 0L6.364 4.95Z"
+                      fill="var(--blue-60)"
+                    />
+                  </svg>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      );
+    });
   };
 
   return (
@@ -636,327 +990,41 @@ const Filter = ({ onClose, onFilterChange }) => {
         </div>
       )}
 
-      {/* Selection List */}
-      <div className="filter-selection-list">
-        {/* Show "No results" when search has 2+ characters but no results */}
-        {searchQuery && searchQuery.length >= 2 && currentView === 'make' && filteredItems.length === 0 ? (
-          <div className="filter-no-results">
-            No results
-          </div>
-        ) : /* Handle hierarchical search results when searching */
-        searchQuery && searchQuery.length >= 2 && currentView === 'make' ? (
-          filteredItems.map((searchGroup, groupIndex) => (
-            <div key={`search-group-${groupIndex}`} className="filter-search-group">
-              {/* Make header */}
-              <div
-                className={`filter-selection-item make-header ${isItemSelected(searchGroup.make) ? 'selected' : ''}`}
-                onClick={() => handleItemSelect(searchGroup.make)}
-                tabIndex={0}
-                role="button"
-                aria-label={`Select ${searchGroup.make.name}`}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleItemSelect(searchGroup.make);
-                  }
-                }}
-              >
-                <div className="filter-selection-content">
-                  <div className="filter-selection-left">
-                    {isItemSelected(searchGroup.make) && (
-                      <div className="filter-checkbox">
-                        <svg viewBox="0 0 24 24" fill="none">
-                          <path
-                            d="M10 15.172L19.192 5.979L20.607 7.393L10 18L3.636 11.636L5.05 10.222L10 15.172Z"
-                            fill="white"
-                          />
-                        </svg>
-                      </div>
-                    )}
-                    <div className="filter-selection-text">
-                      <div className="filter-selection-name">{searchGroup.make.name}</div>
-                      <div className="filter-selection-count">({searchGroup.make.count})</div>
-                    </div>
-                  </div>
-                  
-                  {isItemSelected(searchGroup.make) && (
-                    <div 
-                      className="filter-selection-right"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleModelLinkClick(searchGroup.make);
-                      }}
-                      tabIndex={0}
-                      role="button"
-                      aria-label={`Go to ${searchGroup.make.name} models`}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleModelLinkClick(searchGroup.make);
-                        }
-                      }}
-                    >
-                      <div className="filter-model-link">
-                        Model
-                      </div>
-                      <div className="filter-model-arrow">
-                        <svg viewBox="0 0 13 8" fill="none">
-                          <path
-                            d="M6.364 4.95L11.314 0L12.728 1.414L6.364 7.778L0 1.414L1.414 0L6.364 4.95Z"
-                            fill="var(--blue-60)"
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              </div>
-              
-              {/* Model children */}
-              {searchGroup.models.map((model, modelIndex) => {
-                // Create model object with make info for selection
-                const modelWithMake = {
-                  ...model,
-                  makeName: searchGroup.make.name
-                };
-                const isModelSelected = selectedModels.some(selected => 
-                  selected.name === model.name && selected.makeName === searchGroup.make.name
-                );
-                
-                return (
-                  <div
-                    key={`model-${modelIndex}`}
-                    className="filter-selection-item model-child"
-                    onClick={() => {
-                      // First select the make if not already selected
-                      if (!isItemSelected(searchGroup.make)) {
-                        handleItemSelect(searchGroup.make);
-                      }
-                      
-                      // Toggle model selection (select or deselect)
-                      if (isModelSelected) {
-                        // Remove from selection
-                        const newSelectedModels = selectedModels.filter(selected => 
-                          !(selected.name === model.name && selected.makeName === searchGroup.make.name)
-                        );
-                        setSelectedModels(newSelectedModels);
-                        
-                        // Notify parent component
-                        onFilterChange({
-                          makes: selectedMakes.map(make => make.name),
-                          models: newSelectedModels.map(model => `${model.makeName} ${model.name}`),
-                          trims: selectedTrims.map(trim => `${trim.makeName} ${trim.modelName} ${trim.name}`)
-                        });
-                      } else {
-                        // Add to selection
-                        const newSelectedModels = [...selectedModels, modelWithMake];
-                        setSelectedModels(newSelectedModels);
-                        
-                        // Notify parent component
-                        onFilterChange({
-                          makes: selectedMakes.map(make => make.name),
-                          models: newSelectedModels.map(model => `${model.makeName} ${model.name}`),
-                          trims: selectedTrims.map(trim => `${trim.makeName} ${trim.modelName} ${trim.name}`)
-                        });
-                      }
-                    }}
-                    tabIndex={0}
-                    role="button"
-                    aria-label={`Select ${model.name} under ${searchGroup.make.name}`}
-                  >
-                    <div className="filter-selection-content">
-                      <div className="filter-selection-left">
-                        <div className="model-indicator">
-                          <svg viewBox="0 0 16 16" fill="none" className="model-L-indicator">
-                            <path
-                              d="M4 2V12H12"
-                              stroke="var(--park-gray-20)"
-                              strokeWidth="1.5"
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              fill="none"
-                            />
-                          </svg>
-                        </div>
-                        {isModelSelected && (
-                          <div className="filter-checkbox">
-                            <svg viewBox="0 0 24 24" fill="none">
-                              <path
-                                d="M10 15.172L19.192 5.979L20.607 7.393L10 18L3.636 11.636L5.05 10.222L10 15.172Z"
-                                fill="white"
-                              />
-                            </svg>
-                          </div>
-                        )}
-                        <div className="filter-selection-text">
-                          <div className="filter-selection-name">{model.name}</div>
-                          <div className="filter-selection-count">({model.count})</div>
-                        </div>
-                      </div>
-                      
-                      {isModelSelected && (
-                        <div 
-                          className="filter-selection-right"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            handleTrimLinkClick(modelWithMake);
-                          }}
-                          tabIndex={0}
-                          role="button"
-                          aria-label={`Go to ${model.name} trims`}
-                          onKeyDown={(e) => {
-                            if (e.key === 'Enter' || e.key === ' ') {
-                              e.preventDefault();
-                              e.stopPropagation();
-                              handleTrimLinkClick(modelWithMake);
-                            }
-                          }}
-                        >
-                          <div className="filter-model-link">
-                            Trim
-                          </div>
-                          <div className="filter-model-arrow">
-                            <svg viewBox="0 0 13 8" fill="none">
-                              <path
-                                d="M6.364 4.95L11.314 0L12.728 1.414L6.364 7.778L0 1.414L1.414 0L6.364 4.95Z"
-                                fill="var(--blue-60)"
-                              />
-                            </svg>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+      {/* Selection List with Transitions */}
+      <div className="filter-content-wrapper">
+        {!isTransitioning ? (
+          /* Static view when not transitioning */
+          <div className="filter-view-container static">
+            <div className="filter-selection-list">
+              {renderListContent(currentView, filteredItems)}
             </div>
-          ))
+          </div>
         ) : (
-          /* Regular view - show normal items */
-          filteredItems.map((item, index) => {
-            const isSelected = isItemSelected(item);
-            
-            // Check if this item was selected before navigation (should have green background)
-            let wasPreNavigationSelected = false;
-            if (currentView === 'make') {
-              wasPreNavigationSelected = preNavigationSelections.makes.some(selected => selected.name === item.name);
-            } else if (currentView === 'model') {
-              wasPreNavigationSelected = preNavigationSelections.models.some(selected => 
-                selected.name === item.name && selected.makeName === item.makeName
-              );
-            } else if (currentView === 'trim') {
-              wasPreNavigationSelected = preNavigationSelections.trims.some(selected => 
-                selected.name === item.name && selected.makeName === item.makeName && selected.modelName === item.modelName
-              );
-            }
-            
-            const shouldShowAsSelectedGroup = wasPreNavigationSelected && (
-              (currentView === 'make' && hasNavigatedAway.make) ||
-              (currentView === 'model' && hasNavigatedAway.model) ||
-              (currentView === 'trim' && hasNavigatedAway.trim)
-            );
-            
-            return (
-              <div
-                key={`${item.name}-${index}`}
-                className={`filter-selection-item ${shouldShowAsSelectedGroup ? 'selected' : ''}`}
-                onClick={() => handleItemSelect(item)}
-                tabIndex={0}
-                role="button"
-                aria-label={`Select ${item.name}`}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                    handleItemSelect(item);
-                  }
-                }}
-              >
-                <div className="filter-selection-content">
-                  <div className="filter-selection-left">
-                    {isSelected && (
-                      <div className="filter-checkbox">
-                        <svg viewBox="0 0 24 24" fill="none">
-                          <path
-                            d="M10 15.172L19.192 5.979L20.607 7.393L10 18L3.636 11.636L5.05 10.222L10 15.172Z"
-                            fill="white"
-                          />
-                        </svg>
-                      </div>
-                    )}
-                    <div className="filter-selection-text">
-                      <div className="filter-selection-name">{item.name}</div>
-                      <div className="filter-selection-count">({item.count})</div>
-                    </div>
-                  </div>
-                  
-                  {isSelected && currentView === 'make' && (
-                    <div 
-                      className="filter-selection-right"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleModelLinkClick(item);
-                      }}
-                      tabIndex={0}
-                      role="button"
-                      aria-label={`Go to ${item.name} models`}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleModelLinkClick(item);
-                        }
-                      }}
-                    >
-                      <div className="filter-model-link">
-                        Model
-                      </div>
-                      <div className="filter-model-arrow">
-                        <svg viewBox="0 0 13 8" fill="none">
-                          <path
-                            d="M6.364 4.95L11.314 0L12.728 1.414L6.364 7.778L0 1.414L1.414 0L6.364 4.95Z"
-                            fill="var(--blue-60)"
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                  )}
-                  
-                  {isSelected && currentView === 'model' && (
-                    <div 
-                      className="filter-selection-right"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleTrimLinkClick(item);
-                      }}
-                      tabIndex={0}
-                      role="button"
-                      aria-label={`Go to ${item.name} trims`}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          e.stopPropagation();
-                          handleTrimLinkClick(item);
-                        }
-                      }}
-                    >
-                      <div className="filter-model-link">
-                        Trim
-                      </div>
-                      <div className="filter-model-arrow">
-                        <svg viewBox="0 0 13 8" fill="none">
-                          <path
-                            d="M6.364 4.95L11.314 0L12.728 1.414L6.364 7.778L0 1.414L1.414 0L6.364 4.95Z"
-                            fill="var(--blue-60)"
-                          />
-                        </svg>
-                      </div>
-                    </div>
-                  )}
-                </div>
+          <>
+            {/* Previous View (sliding out) */}
+            <div 
+              className={`filter-view-container ${
+                transitionDirection === 'forward' ? 'slide-out-left' : 'slide-out-right'
+              }`}
+            >
+              <div className="filter-selection-list">
+                {renderListContent(previousView, previousItems)}
               </div>
-            );
-          })
+            </div>
+
+            {/* New View (sliding in) */}
+            <div 
+              className={`filter-view-container ${
+                transitionDirection === 'forward' 
+                  ? 'slide-in-from-right active' 
+                  : 'slide-in-from-left active'
+              }`}
+            >
+              <div className="filter-selection-list">
+                {renderListContent(currentView, filteredItems)}
+              </div>
+            </div>
+          </>
         )}
       </div>
     </div>
