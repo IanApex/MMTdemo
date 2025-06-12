@@ -214,10 +214,20 @@ const Filter = ({ onClose, onFilterChange }) => {
     if (currentView === 'make') {
       const isSelected = selectedMakes.some(make => make.name === item.name);
       let newSelectedMakes;
+      let newSelectedModels = selectedModels;
+      let newSelectedTrims = selectedTrims;
       
       if (isSelected) {
         // Remove from selection
         newSelectedMakes = selectedMakes.filter(make => make.name !== item.name);
+        
+        // Also remove all models and trims belonging to this make
+        newSelectedModels = selectedModels.filter(model => model.makeName !== item.name);
+        newSelectedTrims = selectedTrims.filter(trim => trim.makeName !== item.name);
+        
+        // Update the state for models and trims as well
+        setSelectedModels(newSelectedModels);
+        setSelectedTrims(newSelectedTrims);
       } else {
         // Add to selection
         newSelectedMakes = [...selectedMakes, item];
@@ -228,20 +238,29 @@ const Filter = ({ onClose, onFilterChange }) => {
       // Notify parent component
       onFilterChange({
         makes: newSelectedMakes.map(make => make.name),
-        models: selectedModels.map(model => `${model.makeName} ${model.name}`),
-        trims: selectedTrims.map(trim => `${trim.makeName} ${trim.modelName} ${trim.name}`)
+        models: newSelectedModels.map(model => `${model.makeName} ${model.name}`),
+        trims: newSelectedTrims.map(trim => `${trim.makeName} ${trim.modelName} ${trim.name}`)
       });
     } else if (currentView === 'model') {
       const isSelected = selectedModels.some(model => 
         model.name === item.name && model.makeName === item.makeName
       );
       let newSelectedModels;
+      let newSelectedTrims = selectedTrims;
       
       if (isSelected) {
         // Remove from selection
         newSelectedModels = selectedModels.filter(model => 
           !(model.name === item.name && model.makeName === item.makeName)
         );
+        
+        // Also remove all trims belonging to this model
+        newSelectedTrims = selectedTrims.filter(trim => 
+          !(trim.makeName === item.makeName && trim.modelName === item.name)
+        );
+        
+        // Update the state for trims as well
+        setSelectedTrims(newSelectedTrims);
       } else {
         // Add to selection
         newSelectedModels = [...selectedModels, item];
@@ -253,7 +272,7 @@ const Filter = ({ onClose, onFilterChange }) => {
       onFilterChange({
         makes: selectedMakes.map(make => make.name),
         models: newSelectedModels.map(model => `${model.makeName} ${model.name}`),
-        trims: selectedTrims.map(trim => `${trim.makeName} ${trim.modelName} ${trim.name}`)
+        trims: newSelectedTrims.map(trim => `${trim.makeName} ${trim.modelName} ${trim.name}`)
       });
     } else if (currentView === 'trim') {
       const isSelected = selectedTrims.some(trim => 
