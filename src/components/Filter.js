@@ -31,6 +31,7 @@ const Filter = ({ onClose, onFilterChange }) => {
   const [transitionDirection, setTransitionDirection] = useState('forward'); // 'forward' or 'backward'
   const [previousView, setPreviousView] = useState(null);
   const [previousItems, setPreviousItems] = useState([]);
+  const [slideInActive, setSlideInActive] = useState(false);
 
   // Initialize data based on current view
   useEffect(() => {
@@ -223,9 +224,8 @@ const Filter = ({ onClose, onFilterChange }) => {
     setPreviousView(currentView);
     setPreviousItems([...filteredItems]);
     setTransitionDirection(direction);
-    setIsTransitioning(true);
 
-    // Apply contextual filters
+    // Apply contextual filters first
     Object.keys(contextualData).forEach(key => {
       if (contextualData[key] !== undefined) {
         setContextualFilter(prev => ({
@@ -235,18 +235,28 @@ const Filter = ({ onClose, onFilterChange }) => {
       }
     });
 
-    // Start transition immediately
+    // Start transition
+    setIsTransitioning(true);
+    setSlideInActive(false);
+    
+    // Update the view immediately
+    setCurrentView(newView);
+    setSearchQuery('');
+
+    // Start the slide-in animation after a brief delay
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        setSlideInActive(true);
+      });
+    });
+
+    // Complete transition after CSS animation duration
     setTimeout(() => {
-      setCurrentView(newView);
-      setSearchQuery('');
-      
-      // Complete transition after CSS animation
-      setTimeout(() => {
-        setIsTransitioning(false);
-        setPreviousView(null);
-        setPreviousItems([]);
-      }, 300); // Match CSS transition duration
-    }, 10); // Small delay to ensure proper initial state
+      setIsTransitioning(false);
+      setPreviousView(null);
+      setPreviousItems([]);
+      setSlideInActive(false);
+    }, 350);
   };
 
   // Handle item selection (checkbox toggle)
@@ -1016,8 +1026,8 @@ const Filter = ({ onClose, onFilterChange }) => {
             <div 
               className={`filter-view-container ${
                 transitionDirection === 'forward' 
-                  ? 'slide-in-from-right active' 
-                  : 'slide-in-from-left active'
+                  ? `slide-in-from-right ${slideInActive ? 'active' : ''}` 
+                  : `slide-in-from-left ${slideInActive ? 'active' : ''}`
               }`}
             >
               <div className="filter-selection-list">
